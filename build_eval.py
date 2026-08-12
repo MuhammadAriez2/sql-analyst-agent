@@ -45,7 +45,10 @@ QUESTIONS = [
     {
         "id": 6,
         "tier": 1,
-        "question": "What are the five longest tracks, with their durations in milliseconds?",
+        "question": (
+            "What are the five longest tracks? Give two columns: track name "
+            "and duration in milliseconds."
+        ),
         "gold_sql": (
             "SELECT Name, Milliseconds FROM Track "
             "ORDER BY Milliseconds DESC, TrackId LIMIT 5;"
@@ -73,7 +76,7 @@ QUESTIONS = [
         "id": 9,
         "tier": 1,
         "question": "What are the distinct track prices?",
-"gold_sql": "SELECT DISTINCT UnitPrice FROM Track ORDER BY UnitPrice;",
+        "gold_sql": "SELECT DISTINCT UnitPrice FROM Track ORDER BY UnitPrice;",
     },
     {
         "id": 10,
@@ -139,6 +142,74 @@ QUESTIONS = [
             "JOIN Artist ar ON al.ArtistId = ar.ArtistId "
             "GROUP BY ar.ArtistId, ar.Name "
             "ORDER BY Revenue DESC, ar.Name LIMIT 5;"
+        ),
+    },
+    {
+        "id": 16,
+        "tier": 3,
+        "question": (
+            "For each employee, give two columns: the employee's full name and "
+            "their manager's full name. Include employees who have no manager."
+        ),
+        "gold_sql": (
+            "SELECT e.FirstName || ' ' || e.LastName AS Employee, "
+            "m.FirstName || ' ' || m.LastName AS Manager "
+            "FROM Employee e LEFT JOIN Employee m ON e.ReportsTo = m.EmployeeId "
+            "ORDER BY e.EmployeeId;"
+        ),
+    },
+    {
+        "id": 17,
+        "tier": 3,
+        "question": (
+            "Which customers have spent more than the average customer? "
+            "Give first name, last name, and total spend as three separate columns."
+        ),
+        "gold_sql": (
+            "SELECT c.FirstName, c.LastName, ROUND(SUM(i.Total), 2) AS Spend "
+            "FROM Customer c JOIN Invoice i ON c.CustomerId = i.CustomerId "
+            "GROUP BY c.CustomerId "
+            "HAVING SUM(i.Total) > ("
+            "SELECT AVG(t.s) FROM (SELECT SUM(Total) s FROM Invoice GROUP BY CustomerId) t"
+            ") ORDER BY Spend DESC, c.LastName, c.FirstName;"
+        ),
+    },
+    {
+        "id": 18,
+        "tier": 3,
+        "question": "For each genre, which single track earned the most revenue?",
+        "gold_sql": (
+            "SELECT Genre, TrackName, Rev FROM ("
+            "SELECT g.Name AS Genre, t.Name AS TrackName, "
+            "ROUND(SUM(il.UnitPrice * il.Quantity), 2) AS Rev, "
+            "ROW_NUMBER() OVER (PARTITION BY g.GenreId "
+            "ORDER BY SUM(il.UnitPrice * il.Quantity) DESC, t.TrackId) AS rn "
+            "FROM InvoiceLine il "
+            "JOIN Track t ON il.TrackId = t.TrackId "
+            "JOIN Genre g ON t.GenreId = g.GenreId "
+            "GROUP BY g.GenreId, t.TrackId) WHERE rn = 1 "
+            "ORDER BY Rev DESC, Genre;"
+        ),
+    },
+    {
+        "id": 19,
+        "tier": 3,
+        "question": "Which genres have never had a single track purchased?",
+        "gold_sql": (
+            "SELECT g.Name FROM Genre g WHERE NOT EXISTS ("
+            "SELECT 1 FROM Track t JOIN InvoiceLine il ON t.TrackId = il.TrackId "
+            "WHERE t.GenreId = g.GenreId) ORDER BY g.Name;"
+        ),
+    },
+    {
+        "id": 20,
+        "tier": 3,
+        "question": "What was the total revenue for each month of 2023? Format each month as YYYY-MM.",
+        "gold_sql": (
+            "SELECT strftime('%Y-%m', InvoiceDate) AS Month, "
+            "ROUND(SUM(Total), 2) AS Revenue FROM Invoice "
+            "WHERE strftime('%Y', InvoiceDate) = '2023' "
+            "GROUP BY Month ORDER BY Month;"
         ),
     },
 ]
