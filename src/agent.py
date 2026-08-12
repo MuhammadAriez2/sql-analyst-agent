@@ -44,6 +44,7 @@ Rules:
 - SELECT statements only.
 - Use exact table and column names from the schema.
 - Add a deterministic tiebreaker to ORDER BY when using LIMIT.
+- For "top N per group" questions, use ROW_NUMBER() OVER (PARTITION BY ...) in a subquery and filter on the row number. LIMIT applies to the whole result set, not to each group.
 
 Schema:
 {schema}"""
